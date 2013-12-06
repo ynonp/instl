@@ -6,10 +6,15 @@ sys.path.append(os.path.realpath(os.path.join(__file__, "..", "..", "..", "instl
 
 import yaml
 from pyinstl.utils import *
+from pyinstl.installItem import InstallItem
 
+class Define(models.Model):
+    indentifier = models.CharField("indentifier", max_length=128, unique=True)
+    value = models.TextField()
 
 class InstallSource(models.Model):
-   path = models.TextField(unique=True)
+    os = models.CharField("os", max_length=6, choices=zip(InstallItem.os_names,InstallItem.os_names), default="common")
+    path = models.TextField()
 
 class InstallFolder(models.Model):
    path = models.TextField(unique=True)
@@ -42,6 +47,9 @@ def create_install_items_db(path_to_index):
         for ii in the_dict.values():
             #print(ii.repr_for_yaml())
             django_item = InstlItemModel(iid=ii.iid, guid=ii.guid, name=ii.name, remark=ii.remark)
+            #for os_name in ii.os_names:
+            #    ii.implicit_default_os_names = (os_name,)
+            #    print(ii.source_list())
             django_item.save()
         #print(InstlItemModel.objects.all())
     except yaml.YAMLError as ye:

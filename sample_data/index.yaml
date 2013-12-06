@@ -1,0 +1,3311 @@
+--- !define
+
+REPO_REV: HEAD
+SVN_CLIENT_PATH: $(SVN_CLIENT_PATH_FOR_$(CURRENT_OS))
+WAVES_DIR_FOR_Win32: "c:/Program Files/Waves"
+WAVES_DIR_FOR_Win64: "c:/Program Files (x86)/Waves"
+WAVES_DIR_FOR_Win: $(WAVES_DIR_FOR_$(CURRENT_OS_SECOND_NAME))
+WAVES_DIR_FOR_Mac: "/Applications/Waves"
+WAVES_DIR: $(WAVES_DIR_FOR_$(CURRENT_OS))
+WAVES_PLUGINS_DIR_FOR_Mac: $(WAVES_DIR)/Waves Plug-Ins
+WAVES_PLUGINS_DIR_FOR_Win: $(WAVES_DIR)/Plug-Ins
+WAVES_PLUGINS_DIR: $(WAVES_PLUGINS_DIR_FOR_$(CURRENT_OS))
+WAVES_APPS_DIR: $(WAVES_DIR)/Applications
+WAVES_SHELLS_DIR: $(WAVES_DIR)/Waveshells
+WAVES_SOUNDGRID_DIR: $(WAVES_DIR)/SoundGrid
+WAVES_DRIVERS_DIR: $(WAVES_SOUNDGRID_DIR)
+WAVES_WPAPI_DIR: $(WAVES_DIR)/WPAPI
+MACOS_APPLICATIONSUPPORT_DIR: "/Library/Application Support/Waves"
+MACOS_WAVESHELL_AU_DIR: "/Library/Audio/Plug-Ins/Components"
+MACOS_WAVESHELL_DAE_DIR: "/Library/Application Support/Digidesign/Plug-Ins"
+MACOS_WAVESHELL_AAX_DIR: "/Library/Application Support/Avid/Plug-Ins"
+MACOS_WAVESHELL_VST_DIR: "/Library/Audio/Plug-Ins/VST"
+MACOS_WAVESHELL_VST3_DIR: "/Library/Audio/Plug-Ins/VST3"
+COMPANY_NAME: "Waves Audio"
+HOME_DIR_FOR_Win: $(HOMEPATH)
+HOME_DIR_FOR_Mac: $(HOME)
+HOME_DIR: $(HOME_DIR_FOR_$(CURRENT_OS))
+WAVES_PROGRAMDATA_DIR_FOR_Win: $(ProgramData)/Waves Audio
+WAVES_PROGRAMDATA_DIR_FOR_Mac: /Library/Application Support/Waves
+WAVES_PROGRAMDATA_DIR: $(WAVES_PROGRAMDATA_DIR_FOR_$(CURRENT_OS))
+
+--- !index # Installation index
+
+# #########################################################################
+# QT Libraries
+# #########################################################################
+QT_4_7_3_IID:
+    name: Waves' Qt libraries ver. 4.7.3
+    Mac:
+        install_sources:
+            - Apps/WavesQtLibs_4.7.3
+        install_folders:
+            - $(WAVES_PROGRAMDATA_DIR)
+    Win:
+        install_sources:
+            - Apps/WavesQtLibs_4.7.3
+        install_folders:
+            - $(WAVES_APPS_DIR)
+QT_4_8_2_IID:
+    name: Waves' Qt libraries ver. 4.8.2
+    Mac:
+        install_sources:
+            - Apps/WavesQtLibs_4.8.2
+        install_folders:
+            - $(WAVES_PROGRAMDATA_DIR)
+    Win:
+        install_sources:
+            - Apps/WavesQtLibs_4.8.2
+        install_folders:
+            - $(WAVES_APPS_DIR)
+QtGTRCore_IID:
+    name: dll for GTR and GTRSolo
+    Win:
+        install_sources:
+            - !files Apps/QtGTRCore
+        install_folders:
+            - $(WAVES_APPS_DIR)
+
+# #########################################################################
+# Default
+# #########################################################################
+Set_Folder_Icon_IID:
+    Mac:
+        actions:
+            folder_out:
+                - $(SET_ICON_PATH) -f -i "$(WAVES_PROGRAMDATA_DIR)/Icons/Folder.icns" "$PWD"
+    Win:
+        actions:
+            folder_out:
+                - copy "$(WAVES_PROGRAMDATA_DIR)\Icons\Folder.ico" . & copy "$(WAVES_PROGRAMDATA_DIR)\Icons\desktop.ini" . & attrib +s . & attrib +s +h ".\desktop.ini" & attrib +h +s ".\Folder.ico"
+    depends:
+        - Get_General_Icons_IID
+
+Set_Folder_Icon_Recursive_IID:
+    Mac:
+        actions:
+            folder_out:
+                - find . -type d -mindepth 1 -print0 | xargs -0 -I{} $(SET_ICON_PATH) -f -i "$(WAVES_PROGRAMDATA_DIR)/Icons/Folder.icns" "{}"
+    Win:
+        actions:
+            folder_out:
+                - for /d /r %%i in (*) do (copy "$(WAVES_PROGRAMDATA_DIR)\Icons\Folder.ico" "%%i" & copy "$(WAVES_PROGRAMDATA_DIR)\Icons\desktop.ini" "%%i" & attrib +s "%%i" & attrib +s +h "%%i\desktop.ini" & attrib +h +s "%%i\Folder.ico")
+    inherit:
+        - Set_Folder_Icon_IID
+
+Set_Bundle_Icon_Recursive_IID:
+    Mac:
+        actions:
+            folder_out:
+                - find . -type d -name '*.bundle' -print0 | xargs -0 -I{} $(SET_ICON_PATH) -f "{}"
+    Win:
+        actions:
+            folder_out:
+                - for /d /r %%i in (*.bundle) do (attrib +s "%%i" & attrib +s +h "%%i"\desktop.ini)
+
+Set_Lib_Icon_Recursive_IID:
+    Mac:
+        actions:
+            folder_out:
+                - find . -type d -name '*.framework' -print0 | xargs -0 -I{} $(SET_ICON_PATH) -f "{}"
+
+# Get icons that do not belong to specific product
+Get_General_Icons_IID:
+    install_sources:
+        - Icons
+    install_folders:
+        - $(WAVES_PROGRAMDATA_DIR)
+
+Plugin_folder_common_actions_IID:
+    Mac:
+        actions:
+            folder_out:
+                - rm ~/Library/Preferences/Waves\ Preferences/Waves\ Plugins; ln -s "`pwd`" ~/Library/Preferences/Waves\ Preferences/Waves\ Plugins
+                - mkdir -p Documents
+                - find . -type f -name '*.pdf' -print0 | xargs -0 -I{} cp "{}" Documents
+                - $(SET_ICON_PATH) -f -i "$(WAVES_PROGRAMDATA_DIR)/Icons/Folder.icns" "$PWD/Documents"
+    Win:
+        actions:
+            folder_out:
+                - reg add HKEY_LOCAL_MACHINE\SOFTWARE\Waves /V Location /T REG_SZ /D "%CD%" /F
+                - mkdir Documents
+                - for /r %%A in (*.pdf) do copy "%%A" Documents
+                - copy "$(WAVES_PROGRAMDATA_DIR)\Icons\Folder.ico" ".\Documents" & copy "$(WAVES_PROGRAMDATA_DIR)\Icons\desktop.ini" ".\Documents" & attrib +s ".\Documents" & attrib +s +h ".\Documents\desktop.ini" & attrib +h +s ".\Documents\Folder.ico"
+    inherit:
+        - Set_Folder_Icon_IID
+        - Set_Bundle_Icon_Recursive_IID
+        - Set_Lib_Icon_Recursive_IID
+
+Plugin_Root_9_1_IID:
+    name: Base for all plugins that use WavesLib 9.1
+    depends:
+        - WaveShells_All_V9_2_IID
+        - WavesLib_9_1_IID
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+    inherit:
+        - Plugin_folder_common_actions_IID
+
+Plugin_Root_9_2_IID:
+    name: Base for all plugins that use WavesLib 9.2
+    depends:
+        - WavesLib_9_2_IID
+        - WaveShells_All_V9_2_IID
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+    inherit:
+        - Plugin_folder_common_actions_IID
+
+Plugin_Root_9_7_IID:
+    name: Base for all plugins that use WavesLib 9.5
+    depends:
+        - WavesLib_9_7_IID
+        - WaveShells_All_V9_7_IID
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+    inherit:
+        - Plugin_folder_common_actions_IID
+
+# #########################################################################
+# wlc
+# #########################################################################
+WLC_IID:
+    name: License manager
+    Mac:
+        install_sources:
+            - Apps/wlc.app
+    Win32:
+        install_sources:
+            - !dir_cont Apps/Wlc
+    install_folders:
+        - $(WAVES_APPS_DIR)
+    depends:
+        - QT_4_8_2_IID
+    inherit:
+        - Set_Folder_Icon_IID
+
+# #########################################################################
+# MultiRack SoundGrid
+# #########################################################################
+MultiRack_SoundGrid_apps_IID:
+    name: MultiRack SoundGrid applications
+    install_sources:
+        - !dir_cont SoundGrid/Apps-SoundGrid
+    Win:
+        install_sources:
+            - Apps/WavesQtLibs_4.7.3_Win32_Release
+    install_folders:
+        - $(WAVES_SOUNDGRID_DIR)
+    inherit:
+        - Set_Folder_Icon_IID
+    Mac:  # Patch - Installing QT only on Mac. On windows We need to install differently
+        depends:
+            - QT_4_7_3_IID
+
+# #########################################################################
+#  SoundGrid Driver
+# #########################################################################
+SG_Driver_IID:
+    name: SoundGrid Driver
+    install_sources:
+        - SoundGrid/Drivers
+    install_folders:
+        - $(WAVES_DRIVERS_DIR)
+    depends:
+        - SG_Firmware_IID
+    Mac:
+        actions:
+            after:
+                - installer -pkg Drivers/SoundGridDriver.mpkg -target /
+                - $(SET_ICON_PATH) -f -i "$(WAVES_PROGRAMDATA_DIR)/Icons/Folder.icns" "$PWD/Drivers"
+    Win:
+        actions:
+            after:
+                - Drivers\WavesSoundGridDriverSetup.exe /VERYSILENT /NORESTART /COMPONENTS="Disable_Network_Throttling,optimize_ndiskernel_threading,AG_protocol,Audio_Drivers"
+                - copy "$(WAVES_PROGRAMDATA_DIR)\Icons\Folder.ico" ".\Drivers" & copy "$(WAVES_PROGRAMDATA_DIR)\Icons\desktop.ini" ".\Drivers" & attrib +s ".\Drivers" & attrib +s +h ".\Drivers\desktop.ini" & attrib +h +s ".\Drivers\Folder.ico"
+
+# #########################################################################
+#  SoundGrid Firmware
+# #########################################################################
+SG_Firmware_IID:
+    name: SoundGrid Firmware
+    install_sources:
+        - SoundGrid/SoundGrid Firmware
+    install_folders:
+        - $(WAVES_PROGRAMDATA_DIR)
+
+# #########################################################################
+#  SoundGrid IO Modules
+# #########################################################################
+SG_IO_Modules_IID:
+    name: SoundGrid IO Modules
+    install_sources:
+        - SoundGrid/SoundGrid IO Modules
+    install_folders:
+        - $(WAVES_PROGRAMDATA_DIR)
+    Win:
+        depends:
+            - QT_4_7_3_For_SG_IO_Modules_IID
+
+# A hack to get Qt lins INSIDE the IO Modules folder
+# When we get proper common folder for Qt on Windows we can change  SG_IO_Modules_IID's dependency to QT_4_7_3_IID
+QT_4_7_3_For_SG_IO_Modules_IID:
+    Win:
+        install_sources:
+            - Apps/WavesQtLibs_4.7.3_Win32_Release
+        install_folders:
+            - $(WAVES_PROGRAMDATA_DIR)/SoundGrid IO Modules
+
+# #########################################################################
+#  SoundGrid Development Tools
+# #########################################################################
+SG_Monitor_IID:
+    Mac:
+        install_sources:
+            - SoundGrid/Development_Tools/SGMonitor.app
+    Win:
+        install_sources:
+            - !file SoundGrid/Development_Tools/SGMonitor.exe
+            - !dir_cont Apps/WavesQtLibs_4.7.3_Win32_Release
+    install_folders:
+        - $(WAVES_SOUNDGRID_DIR)/Development_Tools
+
+# #########################################################################
+# MultiRack Native
+# #########################################################################
+MR_Native_apps_IID:
+    name: MultiRack Native applications
+    install_sources:
+        - !dir_cont SoundGrid/Apps-Native
+    install_folders:
+        - $(WAVES_DIR)/MultiRack
+    inherit:
+        - Set_Folder_Icon_IID
+
+# #########################################################################
+# Digico
+# #########################################################################
+Digico_IID:
+    name: Digico
+    Digico_online:
+        depends:
+            - Digico_apps_IID
+            - Digico_Factory_Presets_IID
+
+    Digico_offline:
+        depends:
+            - Digico_apps_IID
+
+    depends:
+        - MultiRack_IID
+
+Digico_apps_IID:
+    name: Digico apps
+    install_sources:
+        - !dir_cont SoundGrid/Apps-DigiCo
+    install_folders:
+        - $(SD_PATH)
+        - $(WAVES_SOUNDGRID_DIR)/SG_Digico apps backup
+Digico_Factory_Presets_IID:
+    name: Digico apps
+    install_sources:
+        - SoundGrid/Apps-DigiCo/Factory Presets
+    install_folders:
+        - $(WAVES_DIR)
+
+# #########################################################################
+# WavesLib
+# #########################################################################
+WavesLib_9_1_IID:
+    name: WavesLib
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+    Mac:
+        install_sources:
+            - Plugins/WavesLib_9.1.framework
+    Win:
+        install_sources:
+            - !files Plugins/WavesLib_9.1
+
+WavesLib_9_2_IID:
+    name: WavesLib
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+    Mac:
+        install_sources:
+            - Plugins/WavesLib_9.2.framework
+    Win:
+        install_sources:
+            - !files Plugins/WavesLib_9.2
+
+WavesLib_9_7_IID:
+    name: WavesLib
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+    Mac:
+        install_sources:
+            - Plugins/WavesLib_9.7.framework
+    Win:
+        install_sources:
+            - !files Plugins/WavesLib_9.7
+
+
+# #########################################################################
+# WaveShells Common to all versions
+# #########################################################################
+# Separate step for creating and setting the Waveshells folder, so other folders
+# where shells are installed will not get the icon.
+WaveShells_Dir_IID:
+    install_folders:
+        - $(WAVES_SHELLS_DIR)
+    inherit:
+        - Set_Folder_Icon_IID
+
+WaveShells_common_IID:
+    name: WaveShells
+    install_folders:
+        - $(WAVES_SHELLS_DIR)
+    depends:
+        - WaveShells_Dir_IID
+
+# #########################################################################
+# WaveShells 9.2
+# #########################################################################
+WaveShell_VST_2_4_V9_2_IID:
+    name: WaveShell-VST 2.4 version 9.2
+    inherit:
+        - WaveShells_common_IID
+    Win32:
+        depends:
+            - WaveShell_VST_2_4_V9_2_x86_Win_IID
+    Win64:
+        depends:
+            - WaveShell_VST_2_4_V9_2_x64_Win_IID
+            - WaveShell_VST_2_4_V9_2_x86_Win_IID
+    Mac:
+        depends: WaveShell_VST_2_4_V9_2_Mac_IID
+
+WaveShell_VST_2_4_V9_2_Mac_IID:
+    name: WaveShell-VST 2.4 for Mac version 9.2
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_VST_DIR)
+        install_sources:
+            - Shells/9.2/WaveShell-VST 9.2.vst
+
+WaveShell_VST_2_4_V9_2_x64_Win_IID:
+    name: WaveShells VST x64 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES)/VSTPlugIns
+        install_sources:
+            - !files Shells/9.2/VST_64
+
+WaveShell_VST_2_4_V9_2_x86_Win_IID:
+    name: WaveShells VST x86 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win32:
+        install_folders:
+            - $(PROGRAMFILES)/VSTPlugIns
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES(x86))/VSTPlugIns
+    Win:
+        install_sources:
+            - !files Shells/9.2/VST_32
+
+WaveShell_VST_3_V9_2_IID:
+    name: WaveShell VST3 version 9.2 for All
+    Mac:
+        depends: WaveShell_VST_3_V9_2_Mac_IID
+    Win32:
+        depends:
+            - WaveShell_VST_3_V9_2_x86_Win_IID
+    Win64:
+        depends:
+            - WaveShell_VST_3_V9_2_x86_Win_IID
+            - WaveShell_VST_3_V9_2_x64_Win_IID
+
+WaveShell_VST_3_V9_2_Mac_IID:
+    name: WaveShell VST3 for Mac
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_VST3_DIR)
+        install_sources:
+            - Shells/9.2/WaveShell-VST 9.2.vst3
+
+WaveShell_VST_3_V9_2_x86_Win_IID:
+    name: WaveShell VST3 x86 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win32:
+        install_folders:
+            - $(PROGRAMFILES)/Common Files/VST3
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES(x86))/Common Files/VST3
+    Win:
+        install_sources:
+            - !files Shells/9.2/VST3_32
+
+WaveShell_VST_3_V9_2_x64_Win_IID:
+    name: WaveShell VST3 x64 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES)/Common Files/VST3
+        install_sources:
+            - !files Shells/9.2/VST3_64
+
+WaveShell_DAE_9_2_IID:
+    name: WaveShell-DAE
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_DAE_DIR)
+        install_sources:
+            - Shells/9.2/WaveShell-DAE 9.2.dpm
+    Win32:
+        install_folders:
+            - $(PROGRAMFILES)/Common Files/Digidesign/DAE/Plug-ins
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES(x86))/Common Files/Digidesign/DAE/Plug-ins
+    Win:
+        install_sources:
+            - !files Shells/9.2/DAE_32
+
+# Au regi util needs to be installed only in the Waveshells folder
+# and not besides WaveShell-AU in the Components folder. Therefor
+# it needs it's own IID.
+WaveShell_AU_Reg_Util_9_2_IID:
+    name: WaveShells AU registaration utility
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_sources:
+            - Shells/9.2/Waves AU Reg Utility 9.2.app
+
+WaveShell_AU_9_2_IID:
+    name: WaveShells AU
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_AU_DIR)
+        install_sources:
+            - Shells/9.2/WaveShell-AU 9.2.component
+    depends:
+        - WaveShell_AU_Reg_Util_9_2_IID
+
+WaveShells_All_V9_2_IID:
+    name: All WaveShells 9.2
+    Mac:
+        depends:
+            - WaveShell_VST_2_4_V9_2_IID
+            - WaveShell_VST_3_V9_2_IID
+            - WaveShell_DAE_9_2_IID
+            - WaveShell_AU_9_2_IID
+    Win:
+        depends:
+            - WaveShell_VST_2_4_V9_2_IID
+            - WaveShell_VST_3_V9_2_IID
+            - WaveShell_DAE_9_2_IID
+
+# #########################################################################
+# WaveShells 9.7
+# #########################################################################
+WaveShell_VST_2_4_V9_7_IID:
+    name: WaveShell-VST 2.4 version 9.7
+    inherit:
+        - WaveShells_common_IID
+    Win32:
+        depends:
+            - WaveShell_VST_2_4_V9_7_x86_Win_IID
+    Win64:
+        depends:
+            - WaveShell_VST_2_4_V9_7_x64_Win_IID
+            - WaveShell_VST_2_4_V9_7_x86_Win_IID
+    Mac:
+        depends: WaveShell_VST_2_4_V9_7_Mac_IID
+
+WaveShell_VST_2_4_V9_7_Mac_IID:
+    name: WaveShell-VST 2.4 for Mac version 9.7
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_VST_DIR)
+        install_sources:
+            - Shells/9.7/WaveShell-VST 9.7.vst
+
+WaveShell_VST_2_4_V9_7_x64_Win_IID:
+    name: WaveShells VST x64 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES)/VSTPlugIns
+        install_sources:
+            - !files Shells/9.7/VST_64
+
+WaveShell_VST_2_4_V9_7_x86_Win_IID:
+    name: WaveShells VST x86 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win32:
+        install_folders:
+            - $(PROGRAMFILES)/VSTPlugIns
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES(x86))/VSTPlugIns
+    Win:
+        install_sources:
+            - !files Shells/9.7/VST_32
+
+WaveShell_VST_3_V9_7_IID:
+    name: WaveShell VST3 version 9.7 for All
+    Mac:
+        depends: WaveShell_VST_3_V9_7_Mac_IID
+    Win32:
+        depends:
+            - WaveShell_VST_3_V9_7_x86_Win_IID
+    Win64:
+        depends:
+            - WaveShell_VST_3_V9_7_x86_Win_IID
+            - WaveShell_VST_3_V9_7_x64_Win_IID
+
+WaveShell_VST_3_V9_7_Mac_IID:
+    name: WaveShell VST3 for Mac
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_VST3_DIR)
+        install_sources:
+            - Shells/9.7/WaveShell-VST 9.7.vst3
+
+WaveShell_VST_3_V9_7_x86_Win_IID:
+    name: WaveShell VST3 x86 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win32:
+        install_folders:
+            - $(PROGRAMFILES)/Common Files/VST3
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES(x86))/Common Files/VST3
+    Win:
+        install_sources:
+            - !files Shells/9.7/VST3_32
+
+WaveShell_VST_3_V9_7_x64_Win_IID:
+    name: WaveShell VST3 x64 for Windows
+    inherit:
+        - WaveShells_common_IID
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES)/Common Files/VST3
+        install_sources:
+            - !files Shells/9.7/VST3_64
+
+WaveShell_DAE_9_7_IID:
+    name: WaveShell-DAE
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_DAE_DIR)
+        install_sources:
+            - Shells/9.7/WaveShell-DAE 9.7.dpm
+    Win32:
+        install_folders:
+            - $(PROGRAMFILES)/Common Files/Digidesign/DAE/Plug-ins
+    Win64:
+        install_folders:
+            - $(PROGRAMFILES(x86))/Common Files/Digidesign/DAE/Plug-ins
+    Win:
+        install_sources:
+            - !files Shells/9.7/DAE_32
+
+# Au regi util needs to be installed only in the Waveshells folder
+# and not besides WaveShell-AU in the Components folder. Therefor
+# it needs it's own IID.
+WaveShell_AU_Reg_Util_9_7_IID:
+    name: WaveShells AU registaration utility
+    inherit:
+        - WaveShells_common_IID
+    install_sources:
+        - Shells/9.7/Waves AU Reg Utility 9.7.app
+
+WaveShell_AU_9_7_IID:
+    name: WaveShells AU
+    inherit:
+        - WaveShells_common_IID
+    Mac:
+        install_folders:
+            - $(MACOS_WAVESHELL_AU_DIR)
+        install_sources:
+            - Shells/9.7/WaveShell-AU 9.7.component
+    depends:
+        - WaveShell_AU_Reg_Util_9_7_IID
+
+WaveShells_All_V9_7_IID:
+    name: All WaveShells 9.7
+    Mac:
+        depends:
+            - WaveShell_VST_2_4_V9_7_IID
+            - WaveShell_VST_3_V9_7_IID
+            - WaveShell_DAE_9_7_IID
+            - WaveShell_AU_9_7_IID
+    Win:
+        depends:
+            - WaveShell_VST_2_4_V9_7_IID
+            - WaveShell_VST_3_V9_7_IID
+            - WaveShell_DAE_9_7_IID
+
+# #########################################################################
+# WPAPIs
+# #########################################################################
+WaveShell_WPAPI_V8_0_IID:
+    name: WaveShell-WPAPI_1 8.0
+    install_sources:
+        - WPAPI/WaveShell-WPAPI_1 8.0.bundle
+    install_folders:
+        - $(WAVES_WPAPI_DIR)
+    inherit:
+        - Set_Folder_Icon_IID
+        - Set_Bundle_Icon_Recursive_IID
+
+WaveShell_WPAPI_V9_2_IID:
+    name: WaveShell-WPAPI_1 9.2
+    install_sources:
+        - WPAPI/WaveShell-WPAPI_1 9.2.bundle
+    install_folders:
+        - $(WAVES_WPAPI_DIR)
+    inherit:
+        - Set_Folder_Icon_IID
+        - Set_Bundle_Icon_Recursive_IID
+
+WaveShell_WPAPI_V9_7_IID:
+    name: WaveShell-WPAPI_1 9.7
+    install_sources:
+        - WPAPI/WaveShell-WPAPI_1 9.7.bundle
+    install_folders:
+        - $(WAVES_WPAPI_DIR)
+    inherit:
+        - Set_Folder_Icon_IID
+        - Set_Bundle_Icon_Recursive_IID
+
+# #########################################################################
+# PlugIns
+# #########################################################################
+API_2500_IID:
+    name: API-2500
+    guid: df9b6bc1-ad21-11e0-8286-b7fd7bebd530
+    install_sources:
+        - Plugins/API-2500.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+API_550_IID:
+    name: API-550
+    guid: df43d3a6-ad21-11e0-836f-b7fd7bebd530
+    install_sources:
+        - Plugins/API-550.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+API_560_IID:
+    name: ApiEQ560
+    guid: df76732e-ad21-11e0-81a3-b7fd7bebd530
+    install_sources:
+        - Plugins/ApiEQ560.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L360_IID:
+    name: L360
+    remark: L360
+    guid: f13344fe-ad21-11e0-82b1-b7fd7bebd530
+    install_sources:
+        - Plugins/L360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+LFE360_IID:
+    name: LFE360
+    remark: L360
+    guid: f14f750c-ad21-11e0-8124-b7fd7bebd530
+    install_sources:
+        - Plugins/LFE360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+S360_IID:
+    name: S360
+    remark: S360
+    guid: f1c3685d-ad21-11e0-8256-b7fd7bebd530
+    install_sources:
+        - Plugins/S360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Aphex_AX_IID:
+    name: Aphex AX
+    guid: eb0c63ec-ad21-11e0-8288-b7fd7bebd530
+    install_sources:
+        - Plugins/Aphex AX.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+# #########################################################################
+# Artists
+# #########################################################################
+Artist_Root_9_1_IID:
+    name: Base for all artist dlls that use WavesLib 9.1
+    depends:
+        - WavesLib_9_1_IID
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/ArtistDLLV9.1
+    inherit:
+        - Set_Folder_Icon_IID
+Artist_Root_9_2_IID:
+    name: Base for all artist dlls that use WavesLib 9.2
+    depends:
+        - WavesLib_9_2_IID
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/ArtistDLLV9.1
+    inherit:
+        - Set_Folder_Icon_IID
+Artist_0825308982_IID:
+    name: Artist 0825308982
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/0825308982.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_0892678210_IID:
+    name: Artist 0892678210
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/0892678210.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1095779151_IID:
+    name: Artist 1095779151
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1095779151.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1095910227_IID:
+    name: Artist 1095910227
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1095910227.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1096045131_IID:
+    name: Artist 1096045131
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1096045131.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1127292960_IID:
+    name: Artist 1127292960
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1127292960.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1128809809_IID:
+    name: Artist 1128809809
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1128809809.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1128811570_IID:
+    name: Artist 1128811570
+    guid:
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1128811570.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1129730600.krmr_IID:
+    name: Artist 1129730600.krmr
+    install_sources:
+        - !files Plugins/ArtistDLLV9.1/krmr
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/ArtistDLLV9.1
+Artist_1129730626_IID:
+    name: Artist 1129730626
+    guid:
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1129730626.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+    depends:
+        - Artist_1129730600.krmr_IID
+Artist_1145394002_IID:
+    name: Artist 1145394002
+    guid:
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1145394002.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1146311762_IID:
+    name: Artist 1146311762
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1146311762.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1162757959_IID:
+    name: Artist 1162757959
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1162757959.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1162948912_IID:
+    name: Artist 1162948912
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1162948912.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1163284300_IID:
+    name: Artist 1163284300
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1163284300.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1178814532_IID:
+    name: Artist 1178814532
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1178814532.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1179405895_IID:
+    name: Artist 1179405895
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1179405895.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1195461968_IID:
+    name: Artist 1195461968
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1195461968.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1195464792_IID:
+    name: Artist 1195464792
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1195464792.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1195660119_IID:
+    name: Artist 1195660119
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1195660119.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1196377170_IID:
+    name: Artist 1196377170
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1196377170.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1196835408_IID:
+    name: Artist 1196835408
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1196835408.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1196838732_IID:
+    name: Artist 1196838732
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1196838732.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1212302412_IID:
+    name: Artist 1212302412
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1212302412.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1212370256_IID:
+    name: Artist 1212370256
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1212370256.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1212501071_IID:
+    name: Artist 1212501071
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1212501071.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1230393164_IID:
+    name: Artist 1230393164
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1230393164.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1246384195_IID:
+    name: Artist 1246384195
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1246384195.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1278287904_IID:
+    name: Artist 1278287904
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1278287904.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1278431315_IID:
+    name: Artist 1278431315
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1278431315.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1279341121_IID:
+    name: Artist 1279341121
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1279341121.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1279341377_IID:
+    name: Artist 1279341377
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1279341377.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1280329041_IID:
+    name: Artist 1280329041
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1280329041.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1296912196_IID:
+    name: Artist 1296912196
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1296912196.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1347170625_IID:
+    name: Artist 1347170625
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1347170625.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1380014168_IID:
+    name: Artist 1380014168
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1380014168.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1380200759_IID:
+    name: Artist 1380200759
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1380200759.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1380205907_IID:
+    name: Artist 1380205907
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1380205907.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1380794947_IID:
+    name: Artist 1380794947
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1380794947.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1380860448_IID:
+    name: Artist 1380860448
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1380860448.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1380861265_IID:
+    name: Artist 1380861265
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1380861265.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1381388851_IID:
+    name: Artist 1381388851
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1381388851.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1381388866_IID:
+    name: Artist 1381388866
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1381388866.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1381389912_IID:
+    name: Artist 1381389912
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1381389912.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1397249350_IID:
+    name: Artist 1397249350
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1397249350.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1397506888_IID:
+    name: Artist 1397506888
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1397506888.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1397506895_IID:
+    name: Artist 1397506895
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1397506895.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1397507409_IID:
+    name: Artist 1397507409
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1397507409.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1397575761_IID:
+    name: Artist 1397575761
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1397575761.bundle
+    inherit:
+        - Artist_Root_9_2_IID
+Artist_1398030938_IID:
+    name: Artist 1398030938
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1398030938.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1398031187_IID:
+    name: Artist 1398031187
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1398031187.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1398031697_IID:
+    name: Artist 1398031697
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1398031697.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1398031948_IID:
+    name: Artist 1398031948
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1398031948.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1398100052_IID:
+    name: Artist 1398100052
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1398100052.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1415075652_IID:
+    name: Artist 1415075652
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1415075652.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1447251280_IID:
+    name: Artist 1447251280
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1447251280.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1448169779_IID:
+    name: Artist 1448169779
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1448169779.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1448169780_IID:
+    name: Artist 1448169780
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1448169780.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_1464091212_IID:
+    name: Artist 1464091212
+    guid: 611c341d-39b7-43f1-a44d-5310bb283eeb
+    install_sources:
+        - Plugins/ArtistDLLV9.1/1464091212.bundle
+    inherit:
+        - Artist_Root_9_1_IID
+Artist_MM_IID:
+    name: Artist MM
+    install_sources:
+        - Plugins/ArtistDLLV9.1/MM
+
+# #########################################################################
+#
+# #########################################################################
+AudioTrack_IID:
+    name: AudioTrack
+    guid: e6a8de66-ad21-11e0-81f4-b7fd7bebd530
+    install_sources:
+        - Plugins/AudioTrack.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - AudioTrack_Setups_library_IID
+AudioTrack_Setups_library_IID:
+    name: AudioTrack Setups library
+    install_sources:
+        - Plugins/Setup Libraries/AudioTrack Setups library
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+Bass_Rider_IID:
+    name: Bass Rider
+    guid: eb542f98-ad21-11e0-8222-b7fd7bebd530
+    install_sources:
+        - Plugins/Bass Rider.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+C1_IID:
+    name: C1
+    guid: e6c7625a-ad21-11e0-8262-b7fd7bebd530
+    install_sources:
+        - Plugins/C1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - C1_Setups_library_IID
+C1_Setups_library_IID:
+    name: C1 Setups library
+    install_sources:
+        - Plugins/Setup Libraries/C1 Setups library
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+C360_IID:
+    name: C360
+    guid: f1174573-ad21-11e0-817b-b7fd7bebd530
+    install_sources:
+        - Plugins/C360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+C4_IID:
+    name: C4
+    guid: e6ead714-ad21-11e0-82a6-b7fd7bebd530
+    install_sources:
+        - Plugins/C4.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+C6_IID:
+    name: C6
+    guid: eb442f99-ad21-11e0-8219-b7fd7bebd530
+    install_sources:
+        - Plugins/C6.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+CLA_2A_IID:
+    name: CLA-2A
+    guid: e47a4b22-ad21-11e0-80ba-b7fd7bebd530
+    install_sources:
+        - Plugins/CLA-2A.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+CLA_3A_IID:
+    name: CLA-3A
+    guid: e4b00ec4-ad21-11e0-834b-b7fd7bebd530
+    install_sources:
+        - Plugins/CLA-3A.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+CLA_76_IID:
+    name: CLA-76
+    guid: e4e72e7b-ad21-11e0-81a6-b7fd7bebd530
+    install_sources:
+        - Plugins/CLA-76.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Center_IID:
+    name: Center
+    guid: eb621b67-ad21-11e0-8319-b7fd7bebd530
+    install_sources:
+        - Plugins/Center.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+DeBreath_IID:
+    name: DeBreath
+    guid: f3315154-ad21-11e0-8140-b7fd7bebd530
+    install_sources:
+        - Plugins/DeBreath.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+DeEsser_IID:
+    name: DeEsser
+    guid: e7069133-ad21-11e0-82c1-b7fd7bebd530
+    install_sources:
+        - Plugins/DeEsser.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+# #########################################################################
+# ArtistChainers
+# #########################################################################
+CLA_Bass_IID:
+    name: CLA Bass
+    install_sources:
+        - Plugins/CLA Bass.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1195461968_IID
+        - Artist_1195464792_IID
+        - Artist_1195660119_IID
+        - Artist_1196377170_IID
+        - Artist_1196838732_IID
+        - Artist_1212302412_IID
+        - Artist_1278287904_IID
+        - Artist_1279341377_IID
+        - Artist_1296912196_IID
+        - Artist_1380014168_IID
+        - Artist_1380205907_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1398030938_IID
+        - Artist_1398100052_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+CLA_Drums_IID:
+    name: CLA Drums
+    install_sources:
+        - Plugins/CLA Drums.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1195461968_IID
+        - Artist_1195464792_IID
+        - Artist_1195660119_IID
+        - Artist_1196377170_IID
+        - Artist_1196838732_IID
+        - Artist_1212302412_IID
+        - Artist_1278287904_IID
+        - Artist_1279341377_IID
+        - Artist_1296912196_IID
+        - Artist_1380014168_IID
+        - Artist_1380205907_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1398030938_IID
+        - Artist_1398100052_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+CLA_Effects_IID:
+    name: CLA Effects
+    install_sources:
+        - Plugins/CLA Effects.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1195461968_IID
+        - Artist_1195464792_IID
+        - Artist_1195660119_IID
+        - Artist_1196377170_IID
+        - Artist_1196838732_IID
+        - Artist_1212302412_IID
+        - Artist_1278287904_IID
+        - Artist_1279341377_IID
+        - Artist_1296912196_IID
+        - Artist_1380014168_IID
+        - Artist_1380205907_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1398030938_IID
+        - Artist_1398100052_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+CLA_Guitars_IID:
+    name: CLA Guitars
+    install_sources:
+        - Plugins/CLA Guitars.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1195461968_IID
+        - Artist_1195464792_IID
+        - Artist_1195660119_IID
+        - Artist_1196377170_IID
+        - Artist_1196838732_IID
+        - Artist_1212302412_IID
+        - Artist_1278287904_IID
+        - Artist_1279341377_IID
+        - Artist_1296912196_IID
+        - Artist_1380014168_IID
+        - Artist_1380205907_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1398030938_IID
+        - Artist_1398100052_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+CLA_Unplugged_IID:
+    name: CLA Unplugged
+    install_sources:
+        - Plugins/CLA Unplugged.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1195461968_IID
+        - Artist_1195464792_IID
+        - Artist_1195660119_IID
+        - Artist_1196377170_IID
+        - Artist_1196838732_IID
+        - Artist_1212302412_IID
+        - Artist_1278287904_IID
+        - Artist_1279341377_IID
+        - Artist_1296912196_IID
+        - Artist_1380014168_IID
+        - Artist_1380205907_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1398030938_IID
+        - Artist_1398100052_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+CLA_Vocals_IID:
+    name: CLA Vocals
+    install_sources:
+        - Plugins/CLA Vocals.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1195461968_IID
+        - Artist_1195464792_IID
+        - Artist_1195660119_IID
+        - Artist_1196377170_IID
+        - Artist_1196838732_IID
+        - Artist_1212302412_IID
+        - Artist_1278287904_IID
+        - Artist_1279341377_IID
+        - Artist_1296912196_IID
+        - Artist_1380014168_IID
+        - Artist_1380205907_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1398030938_IID
+        - Artist_1398100052_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+EddieKramer_BA_IID:
+    name: Kramer Bass Channel
+    install_sources:
+        - Plugins/EddieKramer BA.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1129730626_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380014168_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1447251280_IID
+        - Artist_1448169780_IID
+EddieKramer_DR_IID:
+    name: Kramer Drum Channel
+    install_sources:
+        - Plugins/EddieKramer DR.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1129730626_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380014168_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1447251280_IID
+        - Artist_1448169780_IID
+EddieKramer_FX_IID:
+    name: Kramer Effects Channel
+    install_sources:
+        - Plugins/EddieKramer FX.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1129730626_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380014168_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1447251280_IID
+        - Artist_1448169780_IID
+EddieKramer_GT_IID:
+    name: Kramer Guitar Channel
+    guid: e0e0ba8c-ad21-11e0-8153-b7fd7bebd530
+    install_sources:
+        - Plugins/EddieKramer GT.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1129730626_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380014168_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1447251280_IID
+        - Artist_1448169780_IID
+EddieKramer_VC_IID:
+    name: Kramer Vocal Channel
+    install_sources:
+        - Plugins/EddieKramer VC.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1129730626_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380014168_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1447251280_IID
+        - Artist_1448169780_IID
+JJP-Bass_IID:
+    name: JJP Bass
+    install_sources:
+        - Plugins/JJP-Bass.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1096045131_IID
+        - Artist_1127292960_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1212370256_IID
+        - Artist_1230393164_IID
+        - Artist_1246384195_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380205907_IID
+        - Artist_1380794947_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+JJP-Cymb-Perc_IID:
+    name: JJP Cymb-Perc
+    install_sources:
+        - Plugins/JJP-Cymb-Perc.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1096045131_IID
+        - Artist_1127292960_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1212370256_IID
+        - Artist_1230393164_IID
+        - Artist_1246384195_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380205907_IID
+        - Artist_1380794947_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+JJP-Drums_IID:
+    name: JJP Drums
+    install_sources:
+        - Plugins/JJP-Drums.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1096045131_IID
+        - Artist_1127292960_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1212370256_IID
+        - Artist_1230393164_IID
+        - Artist_1246384195_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380205907_IID
+        - Artist_1380794947_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+JJP-Guitars_IID:
+    name: JJP Guitars
+    install_sources:
+        - Plugins/JJP-Guitars.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1096045131_IID
+        - Artist_1127292960_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1212370256_IID
+        - Artist_1230393164_IID
+        - Artist_1246384195_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380205907_IID
+        - Artist_1380794947_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+JJP-Strings-Keys_IID:
+    name: JJP Strings-Keys
+    install_sources:
+        - Plugins/JJP-Strings-Keys.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1096045131_IID
+        - Artist_1127292960_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1212370256_IID
+        - Artist_1230393164_IID
+        - Artist_1246384195_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380205907_IID
+        - Artist_1380794947_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+JJP-Vocals_IID:
+    name: JJP Vocals
+    install_sources:
+        - Plugins/JJP-Vocals.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0825308982_IID
+        - Artist_1096045131_IID
+        - Artist_1127292960_IID
+        - Artist_1162948912_IID
+        - Artist_1163284300_IID
+        - Artist_1178814532_IID
+        - Artist_1212370256_IID
+        - Artist_1230393164_IID
+        - Artist_1246384195_IID
+        - Artist_1278287904_IID
+        - Artist_1347170625_IID
+        - Artist_1380205907_IID
+        - Artist_1380794947_IID
+        - Artist_1380860448_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397506888_IID
+        - Artist_1397507409_IID
+        - Artist_1397575761_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+MannyM-TripleD_IID:
+    name: MannyM-TripleD
+    install_sources:
+        - Plugins/MannyM-TripleD.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_1095910227_IID
+        - Artist_1127292960_IID
+        - Artist_1128809809_IID
+        - Artist_1129730626_IID
+        - Artist_1146311762_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1212501071_IID
+        - Artist_1278287904_IID
+        - Artist_1280329041_IID
+        - Artist_1380200759_IID
+        - Artist_1380794947_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397249350_IID
+        - Artist_1397506888_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+MannyM-Delay_IID:
+    name: MannyM-Delay
+    install_sources:
+        - Plugins/MannyM-Delay.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_1095910227_IID
+        - Artist_1127292960_IID
+        - Artist_1128809809_IID
+        - Artist_1129730626_IID
+        - Artist_1146311762_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1212501071_IID
+        - Artist_1278287904_IID
+        - Artist_1280329041_IID
+        - Artist_1380200759_IID
+        - Artist_1380794947_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397249350_IID
+        - Artist_1397506888_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+MannyM-Distortion_IID:
+    name: MannyM-Distortion
+    install_sources:
+        - Plugins/MannyM-Distortion.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_1095910227_IID
+        - Artist_1127292960_IID
+        - Artist_1128809809_IID
+        - Artist_1129730626_IID
+        - Artist_1146311762_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1212501071_IID
+        - Artist_1278287904_IID
+        - Artist_1280329041_IID
+        - Artist_1380200759_IID
+        - Artist_1380794947_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397249350_IID
+        - Artist_1397506888_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+MannyM-EQ_IID:
+    name: MannyM-EQ
+    install_sources:
+        - Plugins/MannyM-EQ.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_1095910227_IID
+        - Artist_1127292960_IID
+        - Artist_1128809809_IID
+        - Artist_1129730626_IID
+        - Artist_1146311762_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1212501071_IID
+        - Artist_1278287904_IID
+        - Artist_1280329041_IID
+        - Artist_1380200759_IID
+        - Artist_1380794947_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397249350_IID
+        - Artist_1397506888_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+MannyM-Reverb_IID:
+    name: MannyM-Reverb
+    install_sources:
+        - Plugins/MannyM-Reverb.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_1095910227_IID
+        - Artist_1127292960_IID
+        - Artist_1128809809_IID
+        - Artist_1129730626_IID
+        - Artist_1146311762_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1212501071_IID
+        - Artist_1278287904_IID
+        - Artist_1280329041_IID
+        - Artist_1380200759_IID
+        - Artist_1380794947_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397249350_IID
+        - Artist_1397506888_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+        - Artist_MM_IID
+MannyM-ToneShaper_IID:
+    name: MannyM-ToneShaper
+    install_sources:
+        - Plugins/MannyM-ToneShaper.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_1095910227_IID
+        - Artist_1127292960_IID
+        - Artist_1128809809_IID
+        - Artist_1129730626_IID
+        - Artist_1146311762_IID
+        - Artist_1163284300_IID
+        - Artist_1179405895_IID
+        - Artist_1212501071_IID
+        - Artist_1278287904_IID
+        - Artist_1280329041_IID
+        - Artist_1380200759_IID
+        - Artist_1380794947_IID
+        - Artist_1380861265_IID
+        - Artist_1381388866_IID
+        - Artist_1397249350_IID
+        - Artist_1397506888_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1464091212_IID
+Maserati_ACG_IID:
+    name: Maserati ACG
+    install_sources:
+        - Plugins/Maserati ACG.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+Maserati_B72_IID:
+    name: Maserati B72
+    install_sources:
+        - Plugins/Maserati B72.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+Maserati_DRM_IID:
+    name: Maserati DRM
+    install_sources:
+        - Plugins/Maserati DRM.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+Maserati_GRP_IID:
+    name: Maserati GRP
+    install_sources:
+        - Plugins/Maserati GRP.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+Maserati_GTi_IID:
+    name: Maserati GTi
+    install_sources:
+        - Plugins/Maserati GTi.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+Maserati_HMX_IID:
+    name: Maserati HMX
+    install_sources:
+        - Plugins/Maserati HMX.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+Maserati_VX1_IID:
+    name: Maserati VX1
+    install_sources:
+        - Plugins/Maserati VX1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Artist_0892678210_IID
+        - Artist_1095779151_IID
+        - Artist_1128811570_IID
+        - Artist_1145394002_IID
+        - Artist_1162757959_IID
+        - Artist_1162948912_IID
+        - Artist_1178814532_IID
+        - Artist_1195464792_IID
+        - Artist_1196835408_IID
+        - Artist_1230393164_IID
+        - Artist_1278431315_IID
+        - Artist_1279341121_IID
+        - Artist_1296912196_IID
+        - Artist_1347170625_IID
+        - Artist_1380861265_IID
+        - Artist_1381388851_IID
+        - Artist_1381388866_IID
+        - Artist_1381389912_IID
+        - Artist_1397506888_IID
+        - Artist_1397506895_IID
+        - Artist_1397575761_IID
+        - Artist_1398030938_IID
+        - Artist_1398031187_IID
+        - Artist_1398031697_IID
+        - Artist_1398031948_IID
+        - Artist_1398100052_IID
+        - Artist_1415075652_IID
+        - Artist_1447251280_IID
+        - Artist_1448169779_IID
+        - Artist_1448169780_IID
+        - Artist_1464091212_IID
+
+# #########################################################################
+#
+# #########################################################################
+Doppler_IID:
+    name: Doppler
+    guid: e5ce4a76-ad21-11e0-832b-b7fd7bebd530
+    install_sources:
+        - Plugins/Doppler.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Dorrough_IID:
+    name: Dorrough
+    guid: eba516c8-ad21-11e0-8377-b7fd7bebd530
+    install_sources:
+        - Plugins/Dorrough.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Dorrough_Surround_5_0_IID:
+    name: Dorrough Surround 5.0
+    guid: eba53bd0-ad21-11e0-809f-b7fd7bebd530
+    remark: Dorrough Surround 5.0
+    install_sources:
+        - Plugins/Dorrough Surround 5.0.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Dorrough_Surround_5_1_IID:
+    name: Dorrough Surround 5.1
+    guid: eba53bd0-ad21-11e0-809f-b7fd7bebd530
+    remark: Dorrough Surround 5.1
+    install_sources:
+        - Plugins/Dorrough Surround 5.1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Doubler_IID:
+    name: Doubler
+    guid: f202b779-ad21-11e0-8344-b7fd7bebd530
+    install_sources:
+        - Plugins/Doubler.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+Element_IID:
+    name: Element
+    guid: e9e780e8-3415-4fde-bc47-27f7d443a2b3
+    install_sources:
+        - Plugins/Element.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+ElementApp_IID:
+    name: Element application
+    Mac:
+        install_sources:
+            - Apps/Element App.app
+        install_folders:
+            - $(WAVES_APPS_DIR)
+    Win:
+        install_sources:
+            - !files Apps/Element
+        install_folders:
+            - $(WAVES_APPS_DIR)
+    depends:
+        - Element_IID
+        - QT_4_7_3_IID
+Enigma_IID:
+    name: Enigma
+    guid: e5ecb58a-ad21-11e0-820b-b7fd7bebd530
+    install_sources:
+        - Plugins/Enigma.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+GEQ_IID:
+    name: GEQ
+    guid: b5cd1675-b663-4a0b-aecc-ca9fe0e573fe
+    install_sources:
+        - Plugins/GEQ.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+
+# #########################################################################
+# GTRSolo
+# #########################################################################
+GTRSolo_IID:
+    name: GTRSolo application & plugins
+    guid: e8f6df11-ad21-11e0-81f9-b7fd7bebd530
+    depends:
+        - GTRSolo_App_IID
+        - GTRSolo_Stomps_IID
+        - GTRSolo_ToolRack_IID
+        - WavesGTRSolo_Presets_IID
+
+GTRSolo_App_IID:
+    name: GTRSolo application
+    Mac:
+        install_sources:
+            - Apps/GTRSolo 3.5.app
+    Win:
+        install_sources:
+            - !files Apps/GTRSolo
+        depends:
+            - QtGTRCore_IID
+    install_folders:
+        - $(WAVES_APPS_DIR)
+    depends:
+        - QT_4_7_3_IID
+    inherit:
+        - Set_Folder_Icon_IID
+
+WavesGTR_Amps_IID:
+    install_sources:
+        - Plugins/WavesGTR/Amps
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/WavesGTR
+    inherit:
+        - Set_Folder_Icon_Recursive_IID
+
+WavesGTR_Cabinets_IID:
+    install_sources:
+        - Plugins/WavesGTR/Cabinets
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/WavesGTR
+    inherit:
+        - Set_Folder_Icon_Recursive_IID
+
+WavesGTRSolo_Presets_IID:
+    install_sources:
+        - Plugins/WavesGTR/Presets/GTR-Solo
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/WavesGTR/Presets
+    depends:
+        - WavesGTR_Amps_IID
+        - WavesGTR_Cabinets_IID
+    inherit:
+        - Set_Folder_Icon_Recursive_IID
+
+GTRSolo_ToolRack_IID:
+    name: ToolRack for GTRSolo
+    remark: guid (e8f6df11-ad21-11e0-81f9-b7fd7bebd530) is on GTRSolo_IID
+    install_sources:
+        - Plugins/GTRSoloToolRack.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+GTRSolo_Stomps_IID:
+    name: Stomps for GTRSolo
+    remark: guid (e8f6df11-ad21-11e0-81f9-b7fd7bebd530) is on GTRSolo_IID
+    install_sources:
+        - Plugins/GTRSolo
+    inherit:
+        - Plugin_Root_9_1_IID
+    Mac:
+        actions:
+            folder_out:
+                - $(SET_ICON_PATH) -f -i "$(WAVES_PROGRAMDATA_DIR)/Icons/Folder.icns" "$PWD/GTRSolo"
+    Win:
+        actions:
+            folder_out:
+                - copy "$(WAVES_PROGRAMDATA_DIR)\Icons\Folder.ico" ".\GTRSolo" & copy "$(WAVES_PROGRAMDATA_DIR)\Icons\desktop.ini" ".\GTRSolo" & attrib +s ".\GTRSolo" & attrib +s +h ".\GTRSolo\desktop.ini" & attrib +h +s ".\GTRSolo\Folder.ico"
+
+# #########################################################################
+# GTR
+# #########################################################################
+GTR_IID:
+    name: GTR application
+    Mac:
+        install_sources:
+            - Apps/GTR 3.5.app
+    Win:
+        install_sources:
+            - !files Apps/GTR
+        depends:
+            - QtGTRCore_IID
+    install_folders:
+        - $(WAVES_APPS_DIR)
+    depends:
+        - GTRAmp_IID
+        - GTRStomp_IID
+        - GTRTuner_IID
+        - GTRInternals_IID
+        - GTR_Stomps_IID
+        - WavesGTR_presets_IID
+        - QT_4_7_3_IID
+    inherit:
+        - Set_Folder_Icon_IID
+
+WavesGTR_presets_IID:
+    install_sources:
+        - !files Plugins/WavesGTR/Presets/GTR
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/WavesGTR/Presets/GTR
+    depends:
+        - WavesGTR_Amps_IID
+        - WavesGTR_Cabinets_IID
+    inherit:
+        - Set_Folder_Icon_Recursive_IID
+
+GTRAmp_IID:
+    name: GTRAmp
+    guid: e808505c-ad21-11e0-83e8-b7fd7bebd530
+    install_sources:
+        - Plugins/GTRAmp.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    inherit:
+        - Set_Folder_Icon_IID
+
+GTRStomp_IID:
+    name: GTRStomp
+    guid:
+    install_sources:
+        - Plugins/GTRStomp.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+GTRTuner_IID:
+    name: GTRTuner
+    guid: 3164b0cb-806c-4bdd-a286-260f9c6eb04c
+    install_sources:
+        - Plugins/GTRTuner.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+GTRInternals_IID:
+    name: GTR Internals
+    guid: e8f6b97d-ad21-11e0-8088-b7fd7bebd530
+    remark: GTRToolRack, GTRAirMixer, GTRInternalAmp, GTRInternalTuner
+    install_sources:
+        - Plugins/GTRToolRack.bundle
+        - Plugins/GTRAirMixer.bundle
+        - Plugins/GTRInternalAmp.bundle
+        - Plugins/GTRInternalTuner.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+GTR_Stomps_IID:
+    name: GTR Stomps
+    guid: 329dbe6a-233e-4f8f-ac70-f5b55036845b
+    remark: StompAxxPress, StompBuzz, StompChorus, StompComp, StompDelay, StompDistortion, StompDoubler, StompEQ, StompFlanger, StompFuzz, StompGate, StompGateComp, StompLayD, StompMetal, StompOctaver, StompOverDrive, StompPanner, StompPhaser, StompPitcher, StompReverb, StompSpring, StompTone, StompVibrolo, StompVolume, StompWahWah
+    install_sources:
+        - Plugins/GTR/StompAxxPress.bundle
+        - Plugins/GTR/StompBuzz.bundle
+        - Plugins/GTR/StompChorus.bundle
+        - Plugins/GTR/StompComp.bundle
+        - Plugins/GTR/StompDelay.bundle
+        - Plugins/GTR/StompDistortion.bundle
+        - Plugins/GTR/StompDoubler.bundle
+        - Plugins/GTR/StompEQ.bundle
+        - Plugins/GTR/StompFlanger.bundle
+        - Plugins/GTR/StompFuzz.bundle
+        - Plugins/GTR/StompGate.bundle
+        - Plugins/GTR/StompGateComp.bundle
+        - Plugins/GTR/StompLayD.bundle
+        - Plugins/GTR/StompMetal.bundle
+        - Plugins/GTR/StompOctaver.bundle
+        - Plugins/GTR/StompOverDrive.bundle
+        - Plugins/GTR/StompPanner.bundle
+        - Plugins/GTR/StompPhaser.bundle
+        - Plugins/GTR/StompPitcher.bundle
+        - Plugins/GTR/StompReverb.bundle
+        - Plugins/GTR/StompSpring.bundle
+        - Plugins/GTR/StompTone.bundle
+        - Plugins/GTR/StompVibrolo.bundle
+        - Plugins/GTR/StompVolume.bundle
+        - Plugins/GTR/StompWahWah.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    Mac:
+        actions:
+            after:
+                - $(SET_ICON_PATH) -f -i "$(WAVES_PROGRAMDATA_DIR)/Icons/Folder.icns" "$PWD/GTR"
+    Win:
+        actions:
+            after:
+                - copy "$(WAVES_PROGRAMDATA_DIR)\Icons\Folder.ico" ".\GTR" & copy "$(WAVES_PROGRAMDATA_DIR)\Icons\desktop.ini" ".\GTR" & attrib +s ".\GTR" & attrib +s +h ".\GTR\desktop.ini" & attrib +h +s ".\GTR\Folder.ico"
+
+# #########################################################################
+#
+# #########################################################################
+H_EQ_IID:
+    name: H_EQ
+    guid: e9a3b6c2-ad21-11e0-823c-b7fd7bebd530
+    install_sources:
+        - Plugins/HEq.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+H_Comp_IID:
+    name: H-Comp
+    guid: e9797602-ad21-11e0-8369-b7fd7bebd530
+    install_sources:
+        - Plugins/H-Comp.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+H_Delay_IID:
+    name: H-Delay
+    guid: e92b2cea-ad21-11e0-8218-b7fd7bebd530
+    install_sources:
+        - Plugins/H-Delay.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+IR_1_IID:
+    name: IR_1
+    guid: ec31edd4-ad21-11e0-8215-b7fd7bebd530
+    remark: IR-1
+    install_sources:
+        - Plugins/IR-1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - IR1IMPULSES_V2_IID
+IR1IMPULSES_V2_IID:
+    name: IR1Impulses V2
+    remark: Basic Impulses for IR-1
+    install_sources:
+        - Plugins/IR1Impulses V2/Basic
+        - Plugins/IR1Impulses V2/Inverse Sweeps
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/IR1Impulses V2
+    inherit:
+        - Set_Folder_Icon_IID
+IR1IMPULSES_IID:
+    name: IR1Impulses
+    install_sources:
+        - Plugins/IR1Impulses
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+IR_360_IID:
+    name: IR-360
+    guid: ec323077-ad21-11e0-8335-b7fd7bebd530
+    install_sources:
+        - Plugins/IR-360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+IR_L_IID:
+    name: IR-L
+    guid: ec32123c-ad21-11e0-83d2-b7fd7bebd530
+    install_sources:
+        - Plugins/IR-L.bundle
+        - Plugins/Acoustics.net Impulses
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - IR1IMPULSES_V2_IID
+        - IR1IMPULSES_IID
+IR_Live_IID:
+    name: IRLive
+    guid: 4b221595-fbb4-46a0-8827-1e07b139a0bd
+    install_sources:
+        - Plugins/IRLive.bundle
+        - Plugins/Acoustics.net Impulses
+    inherit:
+        - Plugin_Root_9_2_IID
+    depends:
+        - IR_LIVE_IMPULSES_IID
+IR_LIVE_IMPULSES_IID:
+    name: IR_LIVE_IMPULSES
+    remark: Basic Impulses for IR-LIVE
+    install_sources:
+        - Plugins/IR1Impulses V2/Basic Live
+        - Plugins/IR1Impulses V2/IR-Live Impulses
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/IR1Impulses V2
+    inherit:
+        - Set_Folder_Icon_IID
+InPhase_IID:
+    name: InPhase
+    guid: 51472ece-6f53-4926-8123-64330d6c6852
+    install_sources:
+        - Plugins/InPhase.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+InPhase_LT_IID:
+    name: InPhase LT
+    guid: b158aea5-79f7-4a39-b9b9-f8c5e7c237c2
+    install_sources:
+        - Plugins/InPhase LT.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+KingsMic_IID:
+    name: KingsMic
+    guid: e686394e-ad21-11e0-8185-b7fd7bebd530
+    install_sources:
+        - Plugins/KingsMic.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+KramerHLS_IID:
+    name: KramerHLS
+    guid: e5100b89-ad21-11e0-81a0-b7fd7bebd530
+    install_sources:
+        - Plugins/KramerHLS.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+KramerPIE_IID:
+    name: KramerPIE
+    guid: e551833a-ad21-11e0-8177-b7fd7bebd530
+    install_sources:
+        - Plugins/KramerPIE.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+KramerTape_IID:
+    name: KramerTape
+    guid: e591e90a-ad21-11e0-83a1-b7fd7bebd530
+    remark: KramerTape
+    install_sources:
+        - Plugins/KramerTape.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L1_IID:
+    name: L1
+    guid: e7223951-ad21-11e0-82d3-b7fd7bebd530
+    install_sources:
+        - Plugins/L1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L2_IID:
+    name: L2
+    guid: ea812d41-ad21-11e0-80f3-b7fd7bebd530
+    remark: L2
+    install_sources:
+        - Plugins/L2.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L3_16_IID:
+    name: L3_16
+    guid: ec719e28-ad21-11e0-8100-b7fd7bebd530
+    install_sources:
+        - Plugins/L3_16.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L3_LL_Multi_IID:
+    name: L3-LL Multi
+    guid: ec971ad7-ad21-11e0-8359-b7fd7bebd530
+    install_sources:
+        - Plugins/L3-LL Multi.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L3_LL_Ultra_IID:
+    name: L3-LL Ultra
+    guid: ec97493f-ad21-11e0-803e-b7fd7bebd530
+    install_sources:
+        - Plugins/L3-LL Ultra.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L3_Multi_IID:
+    name: L3 Multi
+    guid: ec53f8dd-ad21-11e0-8276-b7fd7bebd530
+    install_sources:
+        - Plugins/L3 Multi.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+L3_Ultra_IID:
+    name: L3 Ultra
+    guid: ec541a62-ad21-11e0-8150-b7fd7bebd530
+    install_sources:
+        - Plugins/L3 Ultra.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+LinEQ_IID:
+    name: LinEQ
+    guid: ea9c2b7e-ad21-11e0-8327-b7fd7bebd530
+    install_sources:
+        - Plugins/LinEQ.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+LinMB_IID:
+    name: LinMB
+    guid: eab8d633-ad21-11e0-81eb-b7fd7bebd530
+    install_sources:
+        - Plugins/LinMB.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+LoAir_IID:
+    name: LoAir
+    install_sources:
+        - Plugins/LoAir.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+MV2_IID:
+    name: MV2
+    guid: ed14136b-ad21-11e0-837c-b7fd7bebd530
+    install_sources:
+        - Plugins/MV2.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+MV360_IID:
+    name: MV360
+    guid: f1896c6a-ad21-11e0-82f7-b7fd7bebd530
+    install_sources:
+        - Plugins/MV360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+MaxxBass_IID:
+    name: MaxxBass
+    guid: e73ed1fb-ad21-11e0-8035-b7fd7bebd530
+    install_sources:
+        - Plugins/MaxxBass.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+MaxxVolume_IID:
+    name: MaxxVolume
+    guid: ed13f26a-ad21-11e0-8216-b7fd7bebd530
+    install_sources:
+        - Plugins/MaxxVolume.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+MetaFlanger_IID:
+    name: MetaFlanger
+    guid: e60ab8c6-ad21-11e0-8364-b7fd7bebd530
+    install_sources:
+        - Plugins/MetaFlanger.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - MetaFlanger_Setups_library_IID
+MetaFlanger_Setups_library_IID:
+    name: MetaFlanger Setups Library
+    install_sources:
+        - Plugins/Setup Libraries/MetaFlanger Setup Library
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+MondoMod_IID:
+    name: MondoMod
+    guid: e6281b3c-ad21-11e0-8087-b7fd7bebd530
+    install_sources:
+        - Plugins/MondoMod.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Morphoder_IID:
+    name: Morphoder
+    guid: f2214239-ad21-11e0-82e2-b7fd7bebd530
+    install_sources:
+        - Plugins/Morphoder.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - Morphoder_Synths_IID
+Morphoder_Synths_IID:
+    name: Morphoder Synths
+    install_sources:
+        - Plugins/Morphoder Synths
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)
+MultiRack_IID:
+    name: MultiRack
+    guid: e40fea6e-ad21-11e0-803f-b7fd7bebd530
+    depends:
+        - MR_Native_apps_IID
+        - MultiRack_Plugin_Only_IID
+MultiRack_Plugin_Only_IID:
+    name: MultiRack
+    install_sources:
+        - Plugins/MultiRack.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+NLS_IID:
+    name: NLS
+    guid: 3d47fe76-e1f9-4cbf-b155-715460ee749f
+    install_sources:
+        - Plugins/NLS.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+IDR_IID:
+    name: IDR
+    guid: a39d317a-5e89-4dd2-949a-7b2c15836a10
+    remark: IDR
+    install_sources:
+        - Plugins/IDR.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+DLA_IID:
+    name: DLA
+    guid: a39d317a-5e89-4dd2-949a-7b2c15836a10
+    remark: DLA
+    install_sources:
+        - Plugins/DLA.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - PS22,DLA_Setups_library_IID
+PS22,DLA_Setups_library_IID:
+    name: PS22,DLA SetupLibrary
+    install_sources:
+        - Plugins/Setup Libraries/PS22,DLA SetupLibrary
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+NS1_IID:
+    name: NS1
+    guid: 5d73b443-5698-4ab2-90e4-94e263aa9def
+    remark: NS1
+    install_sources:
+        - Plugins/NS1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKBrighter_IID:
+    name: OKBrighter
+    guid: f0dba8a1-ad21-11e0-82d9-b7fd7bebd530
+    install_sources:
+        - Plugins/OKBrighter.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKDriver_IID:
+    name: Driver
+    guid: ee76f044-ad21-11e0-8170-b7fd7bebd530
+    install_sources:
+        - Plugins/Driver.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKFilter_IID:
+    name: ResonantFilter
+    guid: e9ef3ffd-ad21-11e0-83e3-b7fd7bebd530
+    install_sources:
+        - Plugins/ResonantFilter.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKLouder_IID:
+    name: OKLouder
+    guid: ed143318-ad21-11e0-821a-b7fd7bebd530
+    install_sources:
+        - Plugins/OKLouder.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKPhatter_IID:
+    name: OKPhatter
+    guid: ee93e582-ad21-11e0-8390-b7fd7bebd530
+    install_sources:
+        - Plugins/OKPhatter.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKPressure_IID:
+    name: Crusher
+    guid: ee5af8ce-ad21-11e0-8200-b7fd7bebd530
+    install_sources:
+        - Plugins/Crusher.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+OKWetter_IID:
+    name: OKWetter
+    guid: eecca8c2-ad21-11e0-8250-b7fd7bebd530
+    install_sources:
+        - Plugins/OKWetter.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - Artist_1212302412_IID
+        - Artist_1381388866_IID
+PAZ_IID:
+    name: PAZ
+    guid: e759bc5f-ad21-11e0-827d-b7fd7bebd530
+    install_sources:
+        - Plugins/PAZ.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+PS22_IID:
+    name: PS22
+    guid: e775f5e1-ad21-11e0-809f-b7fd7bebd530
+    install_sources:
+        - Plugins/PS22.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - PS22,DLA_Setups_library_IID
+PuigChild_IID:
+    name: PuigChild
+    guid: ea1152ba-ad21-11e0-8305-b7fd7bebd530
+    install_sources:
+        - Plugins/PuigChild.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+PuigTec_IID:
+    name: PuigTec
+    guid: ea4ad51a-ad21-11e0-8137-b7fd7bebd530
+    install_sources:
+        - Plugins/PuigTec.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Q10_IID:
+    name: Q10
+    guid: e790fd1a-ad21-11e0-82c3-b7fd7bebd530
+    install_sources:
+        - Plugins/Q10.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - Q10_Setups_library_IID
+Q10_Setups_library_IID:
+    name: Q10 Setups Library
+    install_sources:
+        - Plugins/Setup Libraries/Q10 Setups Library
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+Q_Clone_IID:
+    name: Q-Clone
+    guid: e686154a-ad21-11e0-806f-b7fd7bebd530
+    install_sources:
+        - Plugins/Q-Clone.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+R360_IID:
+    name: R360
+    guid: f1a67d84-ad21-11e0-8380-b7fd7bebd530
+    install_sources:
+        - Plugins/R360.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RBass_IID:
+    name: Renaissance Bass
+    guid: ef202a69-ad21-11e0-839b-b7fd7bebd530
+    install_sources:
+        - Plugins/RBass.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RChannel_IID:
+    name: Renaissance Channel
+    guid: ef3b4d52-ad21-11e0-8109-b7fd7bebd530
+    install_sources:
+        - Plugins/RChannel.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RComp_IID:
+    name: Renaissance Compressor
+    guid: ef6067d8-ad21-11e0-8308-b7fd7bebd530
+    install_sources:
+        - Plugins/RComp.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RDeEsser_IID:
+    name: Renaissance DeEsser
+    guid: ef7b9575-ad21-11e0-81f1-b7fd7bebd530
+    install_sources:
+        - Plugins/RDeEsser.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+REDD17_IID:
+    name: REDD17
+    guid: 5634fda9-ea28-4316-9476-527b8e7279a9
+    remark: REDD17
+    install_sources:
+        - Plugins/REDD17.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+REDD3751_IID:
+    name: REDD3751
+    guid: 1b2e3046-b634-4fc3-92df-100722e72a75
+    remark: REDD37-51
+    install_sources:
+        - Plugins/REDD37-51.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+REQ_IID:
+    name: Renaissance Equalizer
+    guid: efb10934-ad21-11e0-8058-b7fd7bebd530
+    remark: REQ
+    install_sources:
+        - Plugins/REQ.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+        - Plugin_Root_9_2_IID
+    depends:
+        - Renaissance_EQ_Setups_library_IID
+Renaissance_EQ_Setups_library_IID:
+    name: Renaissance EQ Setup Lib
+    install_sources:
+        - Plugins/Setup Libraries/Renaissance EQ Setup Lib
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+RVerb_IID:
+    name: Renaissance Reverb
+    guid: efce20a0-ad21-11e0-8012-b7fd7bebd530
+    install_sources:
+        - Plugins/RVerb.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RVox_IID:
+    name: Renaissance Vox
+    guid: efe96c20-ad21-11e0-833c-b7fd7bebd530
+    install_sources:
+        - Plugins/RVox.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RenAxx_IID:
+    name: Renaissance Axx
+    guid: ef9640eb-ad21-11e0-83ab-b7fd7bebd530
+    install_sources:
+        - Plugins/RenAxx.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+RS56_IID:
+    name: RS56
+    install_sources:
+        - Plugins/RS56.bundle
+    inherit:
+        - Plugin_Root_9_2_IID
+S1_IID:
+    name: S1
+    guid: e7af58a0-ad21-11e0-832f-b7fd7bebd530
+    install_sources:
+        - Plugins/S1.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+SSLChannel_IID:
+    name: SSLChannel
+    guid: f07779d5-ad21-11e0-8252-b7fd7bebd530
+    install_sources:
+        - Plugins/SSLChannel.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+SSLComp_IID:
+    name: SSLComp
+    guid: f0b21870-ad21-11e0-811e-b7fd7bebd530
+    install_sources:
+        - Plugins/SSLComp.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+SSLEQ_IID:
+    name: SSLEQ
+    guid: f0db846b-ad21-11e0-801f-b7fd7bebd530
+    install_sources:
+        - Plugins/SSLEQ.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+SoundShifter_IID:
+    name: SoundShifter
+    guid: f23de82a-ad21-11e0-803b-b7fd7bebd530
+    install_sources:
+        - Plugins/SoundShifter.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+SuperTap_IID:
+    name: SuperTap
+    guid: e646beb6-ad21-11e0-83c3-b7fd7bebd530
+    install_sources:
+        - Plugins/SuperTap.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+TransX_IID:
+    name: TransX
+    guid: f25bce3b-ad21-11e0-8126-b7fd7bebd530
+    install_sources:
+        - Plugins/TransX.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+TrueVerb_IID:
+    name: TrueVerb
+    guid: e7cd30b4-ad21-11e0-8385-b7fd7bebd530
+    install_sources:
+        - Plugins/TrueVerb.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+    depends:
+        - TrueVerb_Setups_library_IID
+TrueVerb_Setups_library_IID:
+    name: TrueVerb Setups Library
+    install_sources:
+        - Plugins/Setup Libraries/TrueVerb Setups Library
+    install_folders:
+        - $(WAVES_PLUGINS_DIR)/Setup Libraries
+
+UltraPitch_IID:
+    name: UltraPitch
+    guid: e6675177-ad21-11e0-833e-b7fd7bebd530
+    install_sources:
+        - Plugins/UltraPitch.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+VComp_IID:
+    name: VComp
+    guid: f2781703-ad21-11e0-8147-b7fd7bebd530
+    install_sources:
+        - Plugins/VComp.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+VEQ3_IID:
+    name: VEQ3
+    guid: f2a5ad2a-ad21-11e0-8185-b7fd7bebd530
+    install_sources:
+        - Plugins/VEQ3.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+VEQ4_IID:
+    name: VEQ4
+    guid: f2f168c9-ad21-11e0-803f-b7fd7bebd530
+    install_sources:
+        - Plugins/VEQ4.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Vocal_Rider_IID:
+    name: Vocal Rider
+    guid: ed748b6e-ad21-11e0-83bb-b7fd7bebd530
+    remark: Vocal Rider
+    install_sources:
+        - Plugins/Vocal Rider.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+W43_IID:
+    name: W43
+    guid: eee933a0-ad21-11e0-80e0-b7fd7bebd530
+    install_sources:
+        - Plugins/W43.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+WLM_IID:
+    name: WLM
+    guid: 2d71ad91-bddb-42f2-a652-835830176f9f
+    install_sources:
+        - Plugins/WLM.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+WNS_IID:
+    name: WNS
+    guid: ef03fc08-ad21-11e0-8353-b7fd7bebd530
+    install_sources:
+        - Plugins/WNS.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+WavesTune_IID:
+    name: WavesTune
+    guid: f3513e7f-ad21-11e0-83f7-b7fd7bebd530
+    install_sources:
+        - Plugins/WavesTune.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+WavesTune_LT_IID:
+    name: WavesTune LT
+    guid: f3515f5a-ad21-11e0-81da-b7fd7bebd530
+    install_sources:
+        - Plugins/WavesTune LT.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+X_Click_IID:
+    name: XClick
+    guid: f00484d0-ad21-11e0-8357-b7fd7bebd530
+    install_sources:
+        - Plugins/X-Click.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+X_Crackle_IID:
+    name: XCrackle
+    guid: f01f84d6-ad21-11e0-822a-b7fd7bebd530
+    install_sources:
+        - Plugins/X-Crackle.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+X_Hum_IID:
+    name: XHum
+    guid: f03a7463-ad21-11e0-830f-b7fd7bebd530
+    install_sources:
+        - Plugins/X-Hum.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+X_Noise_IID:
+    name: XNoise
+    guid: f056c254-ad21-11e0-8310-b7fd7bebd530
+    install_sources:
+        - Plugins/X-Noise.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+Z_Noise_IID:
+    name: ZNoise
+    guid: ee3dacf8-ad21-11e0-83ec-b7fd7bebd530
+    install_sources:
+        - Plugins/Z-Noise.bundle
+    inherit:
+        - Plugin_Root_9_1_IID
+
+StudioRack_IID:
+    name: StudioRack
+    guid: Currently uses AudioTrack GUI - which is wrong
+    install_sources:
+        - Plugins/StudioRack.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+
+SignalGenerator_IID:
+    name: SignalGenerator
+    guid: Currently uses AudioTrack GUI - which is wrong
+    install_sources:
+        - Plugins/SignalGenerator.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+
+EMO_LV1_IID:
+    name: aks MixerChainer
+    guid: Not clear what the GUID is
+    install_sources:
+        - Plugins/EMO-LV1.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+
+EMO_D5_IID:
+    name: aks ChannelDynamics
+    guid: 3ddd87ba-616d-4b2e-b4ec-71dfee0e0230
+    install_sources:
+        - Plugins/EMO-D5.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+
+EMO_Q4_IID:
+    name: aks ChannelDynamics
+    guid: 63b0a9f9-a701-4596-acb7-ab671e5addd9
+    install_sources:
+        - Plugins/EMO-Q4.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+
+EMO_F2_IID:
+    name: aks ChannelFilters
+    guid: 3c217951-f061-42a9-a797-c6ae08355e8d
+    install_sources:
+        - Plugins/EMO-F2.bundle
+    inherit:
+        - Plugin_Root_9_7_IID
+
+EMO_IID:
+    name: All Emo plugins
+    depends:
+        - EMO_LV1_IID
+        - EMO_D5_IID
+        - EMO_Q4_IID
+        - EMO_F2_IID
+
+TEST_IID:
+    name: IID for testing instl features
+    Win:
+        install_sources:
+            - Plugins/WNS.bundle
+        install_folders:
+            $(TEST_INSTALL_DIR)/Win
+    Win32:
+        install_sources:
+            - Plugins/WNS.bundle
+        install_folders:
+            $(TEST_INSTALL_DIR)/Win/32
+    Win64:
+        install_sources:
+            - Plugins/WNS.bundle
+        install_folders:
+            $(TEST_INSTALL_DIR)/Win/64
+    Mac:
+        install_sources:
+            - Plugins/WNS.bundle
+        install_folders:
+            $(TEST_INSTALL_DIR)/Mac
+    Mac32:
+        install_sources:
+            - Plugins/WNS.bundle
+        install_folders:
+            $(TEST_INSTALL_DIR)/Mac/32
+    Mac64:
+        install_sources:
+            - Plugins/WNS.bundle
+        install_folders:
+            $(TEST_INSTALL_DIR)/Mac/64
