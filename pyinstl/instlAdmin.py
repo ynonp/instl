@@ -834,6 +834,89 @@ class InstlAdmin(InstlInstanceBase):
         print("info map:", num_files, "files in", num_dirs, "folders")
 
 
+    def do_yaml2html_wheezy(self):
+        try:
+            from wheezy.html.utils import escape_html as escape
+            from wheezy.template.engine import Engine
+            from wheezy.template.loader import DictLoader
+            from wheezy.template.ext.core import CoreExtension
+        except ImportError:
+            test_wheezy_template = None
+        else:
+            self.read_yaml_file(var_list.resolve("$(__MAIN_INPUT_FILE__)"))
+            engine = Engine(loader=DictLoader({'x': """\
+@require(table, title)
+@if table:
+<html>
+    <head>
+        <title>
+        @title!s
+        </title>
+    </head>
+    <body>
+        <table border="2 solid black">
+            <caption>Variables and resolved values in @title</caption>
+            <tr><th>Variable</th><th>Resolved</th></tr>
+            @for var, resolved in table:
+                @if len(@resolved) == 1:
+                <tr><td>@var!h</td><td> @resolved[0]!s</td></tr>
+                @end
+            @end
+        </table>
+    </body>
+@else:
+    No items found.
+@end        """}), extensions=[CoreExtension()])
+            engine.global_vars.update({'h': escape})
+            wheezy_template = engine.get_template('x')
+            ctx = {'table': [(var, var_list.resolve_to_list(var)) for var in sorted(var_list.keys())],
+                   'title': var_list.resolve("$(__MAIN_INPUT_FILE__)")}
+            the_html = wheezy_template.render(ctx)
+            out_file = var_list.resolve("$(__MAIN_OUT_FILE__)")
+            with write_to_file_or_stdout(out_file) as fd:
+                fd.write(the_html)
+                fd.write('\n')
+
+    def do_yaml2html(self):
+        try:
+            from django import Context, Template
+            from django import settings
+        except ImportError:
+            print("django  not available")
+        else:
+            settings.configure()
+            self.read_yaml_file(var_list.resolve("$(__MAIN_INPUT_FILE__)"))
+            c = Context({'table': [(var, var_list.resolve_to_list(var)) for var in sorted(var_list.keys())],
+                         'title': var_list.resolve("$(__MAIN_INPUT_FILE__)")})
+            t = Template("""@require(table, title)
+                        @if table:
+                        <html>
+                            <head>
+                                <title>
+                                {{title}}
+                                </title>
+                            </head>
+                            <body>
+                                <table border="2 solid black">
+                                    <caption>Variables and resolved values in @title</caption>
+                                    <tr><th>Variable</th><th>Resolved</th></tr>
+                                    @for var, resolved in table:
+                                        @if len(@resolved) == 1:
+                                        <tr><td>@var!h</td><td> @resolved[0]!s</td></tr>
+                                        @end
+                                    @end
+                                </table>
+                            </body>
+                        @else:
+                            No items found.
+                        @end
+                        """)
+            the_html = t.render(c)
+            out_file = var_list.resolve("$(__MAIN_OUT_FILE__)")
+            with write_to_file_or_stdout(out_file) as fd:
+                fd.write(the_html)
+                fd.write('\n')
+
 def percent_cb(unused_complete, unused_total):
     sys.stdout.write('.')
     sys.stdout.flush()
