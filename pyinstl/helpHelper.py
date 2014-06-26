@@ -7,6 +7,10 @@ from pyinstl.utils import *
 
 from configVarStack import var_stack as var_list
 
+# This method will be used to patch instlObj to read !help yaml documents
+def read_help_node(instlObj, a_node):
+    instlObj.helpHelper.read_help_node(a_node)
+
 class HelpItem(object):
     def __init__(self, topic, name):
         self.topic = topic
@@ -15,7 +19,7 @@ class HelpItem(object):
 
     def read_from_yaml(self, item_value_node):
         for value_name, value_text in item_value_node:
-            self.texts[value_name] = value_text.value
+            self.texts[value_name] = var_list.resolve(value_text.value)
 
     def short_text(self):
         return self.texts.get("short", "?")
@@ -27,16 +31,22 @@ class HelpHelper(object):
     def __init__(self, instlObj):
         self.help_items = dict()
         self.instlObj = instlObj
+        self.instlObj.helpHelper = self # make HelpHelper member of instlObj
+        instlObj.read_help = read_help_node  # patch instlObj to read help files
 
-    def read_help_file(self, help_file_path):
-        with open_for_read_file_or_url(help_file_path, None) as file_fd:
-            for a_node in yaml.compose_all(file_fd):
-                if a_node.isMapping():
-                    for topic_name, topic_items_node  in a_node:
-                        for item_name, item_value_node  in topic_items_node:
-                            newItem = HelpItem(topic_name, item_name)
-                            newItem.read_from_yaml(item_value_node)
-                            self.help_items[item_name] = newItem
+    def read_help_node(self, a_node):
+        if a_node.isMapping():
+            for topic_name, topic_items_node  in a_node:
+                var_list.push_scope()
+                var_list.set_var("TOPIC_NAME").append(topic_name)
+                for item_name, item_value_node  in topic_items_node:
+                    var_list.push_scope()
+                    var_list.set_var("ITEM_NAME").append(item_name)
+                    newItem = HelpItem(topic_name, item_name)
+                    newItem.read_from_yaml(item_value_node)
+                    self.help_items[item_name] = newItem
+                    var_list.pop_scope()
+                var_list.pop_scope()
 
     def topics(self):
         topics = set()
@@ -65,7 +75,7 @@ class HelpHelper(object):
         item = self.help_items.get(item_name)
         if item:
             import textwrap
-            long_formated = "\n\n".join([textwrap.fill(line, 90,
+            long_formated = "\n\n".join([textwrap.fill(line, 80,
                                           replace_whitespace=False,
                                           initial_indent='    ',
                                           subsequent_indent='    ')for line in item.long_text().splitlines()])
@@ -101,7 +111,7 @@ def do_help(subject, help_folder_path, instlObj):
     hh = HelpHelper(instlObj)
     for help_file in os.listdir(help_folder_path):
         if fnmatch.fnmatch(help_file, '*help.yaml'):
-            hh.read_help_file(os.path.join(help_folder_path, help_file))
+            instlObj.read_yaml_file(os.path.join(help_folder_path, help_file))
 
     if not subject:
         for topic in hh.topics():

@@ -1,3 +1,12 @@
+???? 0.9.15
+    user visible changes, client & admin:
+    * Imporved help text for many commands,
+
+    programmer visible changes:
+    * New yaml doc formats can be handled by methods named after the format,
+        read_help for example will read !help documents.
+    * Allow usage of variables in help text.
+
 24/6/2014 0.9.14   Shai Shasag <shai@waves.com>
 
      user visible changes, client:

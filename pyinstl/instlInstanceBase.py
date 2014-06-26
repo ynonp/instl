@@ -139,7 +139,7 @@ class InstlInstanceBase(object):
             var_list.add_const_config_variable("__RUN_BATCH_FILE__", "from command line options", "yes")
 
     def is_acceptable_yaml_doc(self, doc_node):
-        acceptables = var_list.resolve_to_list("$(ACCEPTABLE_YAML_DOC_TAGS)") + ["define", "define_const", "index"]
+        acceptables = var_list.resolve_to_list("$(ACCEPTABLE_YAML_DOC_TAGS)") + var_list.resolve_to_list("$(__ACCEPTABLE_YAML_DOC_TAGS__)")
         acceptables = ["!"+acceptibul for acceptibul in acceptables]
         retVal = doc_node.tag in acceptables
         return retVal
@@ -156,7 +156,11 @@ class InstlInstanceBase(object):
                     elif a_node.tag.startswith('!index'):
                         self.read_index(a_node)
                     else:
-                        logging.error("Unknown document tag '%s' while reading file %s; Tag should be one of: !define, !index'", a_node.tag, file_path)
+                        read_yaml_func = getattr(self, "read_"+a_node.tag[1:])
+                        if read_yaml_func:
+                            read_yaml_func(self, a_node)
+                        else:
+                            logging.error("Unknown document tag '%s' while reading file %s; Tag should be one of: !define, !index'", a_node.tag, file_path)
         var_list.get_configVar_obj("__READ_YAML_FILES__").append(file_path)
 
     internal_identifier_re = re.compile("""

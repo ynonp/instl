@@ -324,7 +324,8 @@ def main():
                     "__COMMAND_NAMES__": command_names,
                     "__CURRENT_OS__": os_family_name,
                     "__CURRENT_OS_SECOND_NAME__": os_second_name,
-                    "__CURRENT_OS_NAMES__": current_os_names}
+                    "__CURRENT_OS_NAMES__": current_os_names,
+                    "__ACCEPTABLE_YAML_DOC_TAGS__": ("help", "index", "define", "define_const")}
     if os_family_name != "Win":
         initial_vars.update(
                     {"__USRER_ID__": str(os.getuid()),
