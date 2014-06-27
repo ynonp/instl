@@ -8,7 +8,7 @@ import appdirs
 
 import pyinstl.log_utils
 from pyinstl.log_utils import func_log_wrapper
-from configVarList import value_ref_re
+from configVarStack import value_ref_re
 from aYaml import augmentedYaml
 from pyinstl.utils import *
 from pyinstl.searchPaths import SearchPaths

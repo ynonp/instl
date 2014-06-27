@@ -51,9 +51,10 @@ class ConfigVarList(object):
     """ Keeps a list of named build config values.
         Help values resolve $() style references. """
 
-    def __init__(self):
+    def __init__(self, **initial_vars):
         self._ConfigVar_objs = dict() # ConfigVar objects are kept here mapped by their name.
         self.__resolve_stack = list() # for preventing circular references during resolve.
+        self.extend(**initial_vars)
 
     def __len__(self):
         """ return number of ConfigVars """
@@ -96,6 +97,10 @@ class ConfigVarList(object):
     def description(self, var_name):
         """ Get description for variable """
         return self[var_name].description()
+
+    def extend(self, **new_vars_dict):
+        for new_var, new_value in new_vars_dict.iteritems():
+            self.set_var(new_var).append(new_value)
 
     def get_configVar_obj(self, var_name):
         retVal = self._ConfigVar_objs.setdefault(var_name, configVar.ConfigVar(var_name))

@@ -21,6 +21,34 @@ from pyinstl.utils import *
 from pyinstl import configVarList
 from aYaml.augmentedYaml import YamlDumpWrap, YamlDumpDocWrap
 
+
+value_ref_re = re.compile("""(
+                            (?P<varref_pattern>
+                                (?P<varref_marker>[$])      # $
+                                \(                          # (
+                                    (?P<var_name>[\w\s]+?|[\w\s(]+[\w\s)]+?)
+                                    (?P<varref_array>\[
+                                        (?P<array_index>\d+)
+                                    \])?
+                                    (?P<context_pattern><(?P<context_vars>(\w+:\s*\w+\s*(,?)\s*)*)>)?
+                                \)
+                            )
+                            )""", re.X)
+only_one_value_ref_re = re.compile("""
+                            ^
+                            (?P<varref_pattern>
+                                (?P<varref_marker>[$])      # $
+                                \(                          # (
+                                    (?P<var_name>[\w\s]+?|[\w\s(]+[\w\s)]+?)
+                                    (?P<varref_array>\[
+                                        (?P<array_index>\d+)
+                                    \])?
+                                    (?P<context_pattern><(?P<context_vars>(\w+:\s*\w+\s*(,?)\s*)*)>)?
+                                \)
+                            )
+                            $
+                            """, re.X)
+
 class ConfigVarStack(configVarList.ConfigVarList):
     """ Keeps a list of named build config values.
         Help values resolve $() style references. """
@@ -28,6 +56,7 @@ class ConfigVarStack(configVarList.ConfigVarList):
     def __init__(self):
         super(ConfigVarStack, self).__init__()
         self._ConfigVarList_objs = list()
+        self.__resolve_stack = list() # for preventing circular references during resolve.
         self.push_scope()
 
     #def __len__(self):
@@ -127,10 +156,96 @@ class ConfigVarStack(configVarList.ConfigVarList):
         if not isinstance(scope, configVarList.ConfigVarList):
             raise TypeError("scope must be of type ConfigVarList")
         self._ConfigVarList_objs.append(scope)
+        return scope
 
     def pop_scope(self):
         self._ConfigVarList_objs.pop()
 
+    def read_context_vars(self, context_var_str):
+        retVal = dict()
+        var_defs = context_var_str.split(',')
+        pairs = list()
+        for var_def in var_defs:
+            pairs.append(var_def.split(':'))
+        for pair in pairs:
+            retVal[pair[0].strip()] = pair[1].strip()
+        return retVal
+
+    def resolve(self, str_to_resolve, list_sep=" ", default=None):
+        """ Resolve a string, possibly with $() style references.
+            For Variables that hold more than one value, the values are connected with list_sep
+            which defaults to a single space.
+            None existant variables are left as is if default==None, otherwise valie of default is inserted
+        """
+        resolved_str = str_to_resolve
+        search_start_pos = 0
+        #print("resolving:", str_to_resolve)
+        while True:
+            match = value_ref_re.search(resolved_str, search_start_pos)
+            if not match:
+                break
+            replacement = default
+            var_name = match.group('var_name')
+            if var_name in self:
+                if var_name in self.__resolve_stack:
+                    raise Exception("circular resolving of '$({})', resolve stack: {}".format(var_name, self.__resolve_stack))
+                self.__resolve_stack.append(var_name)
+                resolve_scope = self.push_scope()
+                if match.group('context_pattern'):
+                    resolve_scope.extend(**self.read_context_vars(match.group('context_vars')))
+                if match.group('varref_array'):
+                    array_index = int(match.group('array_index'))
+                    if array_index < len(self[var_name]):
+                        replacement = self[var_name][array_index]
+                else:
+                    var_joint_values = list_sep.join([val for val in self[var_name]])
+                    replacement = self.resolve(var_joint_values, list_sep)
+                self.pop_scope()
+                self.__resolve_stack.pop()
+
+            # if var_name was not found skip it on the next search
+            if replacement is None:
+                search_start_pos = match.end('varref_pattern')
+            else:
+                resolved_str = resolved_str.replace(match.group('varref_pattern'), replacement)
+            #print("    ", resolved_str)
+        return resolved_str
+
+    def is_resolved(self, in_str):
+        match = value_ref_re.search(in_str)
+        retVal = match is None
+        return retVal
+
+    def resolve_to_list(self, str_to_resolve, list_sep=" ", default=None):
+        """ Resolve a string, possibly with $([]<>) style references.
+            If the string is a single reference to a variable, a list of resolved values is returned.
+            If the values themselves are a single reference to a variable, their own values extend the list
+            list_sep is used to combine values which are not part of single reference to a variable.
+            otherwise if the string is NOT a single reference to a variable, a list with single value is returned.
+         """
+        resolved_list = list()
+        match = only_one_value_ref_re.search(str_to_resolve)
+        if match:
+            var_name = match.group('var_name')
+            if var_name in self.__resolve_stack:
+                raise Exception("circular resolving of '$({})', resolve stack: {}".format(var_name, self.__resolve_stack))
+            self.__resolve_stack.append(var_name)
+            resolve_scope = self.push_scope()
+            if match.group('context_pattern'):
+                resolve_scope.extend(**self.read_context_vars(match.group('context_vars')))
+            if var_name in self:
+                for value in self[var_name]:
+                    resolved_list.extend(self.resolve_to_list(value, list_sep))
+            else:
+                if default is None:
+                    resolved_list.append(str_to_resolve)
+                else:
+                    resolved_list.append(default)
+            self.pop_scope()
+            self.__resolve_stack.pop()
+        else:
+            resolved_list.append(self.resolve(str_to_resolve, list_sep))
+        return resolved_list
 
 # This is the global variable list serving all parts of instl
 var_stack = ConfigVarStack()

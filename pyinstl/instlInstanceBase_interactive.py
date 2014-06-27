@@ -573,7 +573,16 @@ class CMDObj(cmd.Cmd, object):
         return False
 
     def help_resolve(self):
-        print("")
+        print("resolve a string")
+
+    # resolve a string comataining varables.
+    def do_resolvel(self, param):
+        if param:
+            print(var_list.resolve_to_list(param))
+        return False
+
+    def help_resolvel(self):
+        print("resolve a string to list")
 
 def compact_history():
     if hasattr(readline, "replace_history_item"):
